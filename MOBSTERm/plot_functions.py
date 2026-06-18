@@ -25,6 +25,9 @@ colors = [
 def plot_deltas(mb, save_folder = None):
     deltas = mb['model_parameters']["delta_param"]
     K = deltas.shape[0]
+    names = mb.get("sample_names")
+    if not names:
+        names = [str(i + 1) for i in range(deltas.shape[1])]
     if deltas.shape[0] == 1:
         fig, ax = plt.subplots(nrows=deltas.shape[0], ncols=1, figsize=(5, 1.5))
         ax = [ax] 
@@ -44,7 +47,7 @@ def plot_deltas(mb, save_folder = None):
 
         num_rows = deltas[k].shape[0]
         ax[k].set_yticks([i + 0.5 for i in range(num_rows)])
-        ax[k].set_yticklabels([str(i + 1) for i in range(num_rows)], rotation=0)
+        ax[k].set_yticklabels(names, rotation=0)
 
         ax[k].set(xlabel="", ylabel="Sample")
 
@@ -70,9 +73,9 @@ def plot_deltas(mb, save_folder = None):
     fig.colorbar(sm, cax=cbar_ax)
     seed = mb['seed']
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/deltas_K_{mb['n_components']}_seed_{seed}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/deltas_K_{mb['n_components']}_seed_{seed}.png")
     plt.show()
     plt.close()
 
@@ -88,9 +91,9 @@ def plot_responsib(mb, save_folder = None):
     sns.heatmap(resp, ax=ax, vmin=0, vmax=1, cmap="crest")
     seed = mb['seed']
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/responsibilities_K_{mb['n_components']}_seed_{seed}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/responsibilities_K_{mb['n_components']}_seed_{seed}.png")
     plt.show()
     plt.close()
 
@@ -109,7 +112,10 @@ def plot_paretos(mb, save_folder = None):
         fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (7,3))
         ax = np.array([ax])
     else:
-        fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (18,mb['used_components']*1))      
+        fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (18,mb['used_components']*1))
+    names = mb.get("sample_names")
+    if not names:
+        names = [f"Sample {d+1}" for d in range(mb['NV'].shape[1])]  
     plt.suptitle(f"Pareto with K={mb['n_components']}, seed={mb['seed']}", fontsize=14)
     fig.tight_layout()
     x = np.arange(0,0.5,0.001)
@@ -118,20 +124,23 @@ def plot_paretos(mb, save_folder = None):
             pdf = pareto.pdf(x, alpha_pareto[k,d], scale=0.001)
             ax[k,d].plot(x, pdf, 'r-', lw=1)
             if check:
-                ax[k,d].set_title(f"Sample {d+1} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}, p {round(float(probs_pareto[k,d]), ndigits=2)}", fontsize=10)
+                ax[k,d].set_title(f"{names[d]} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}, p {round(float(probs_pareto[k,d]), ndigits=2)}", fontsize=10)
             else:
-                ax[k,d].set_title(f"Sample {d+1} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}", fontsize=10)
+                ax[k,d].set_title(f"{names[d]} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}", fontsize=10)
     seed = mb['seed']
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/paretos_K_{mb['n_components']}_seed_{seed}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/paretos_K_{mb['n_components']}_seed_{seed}.png")
     plt.show()
     plt.close()
 
 def plot_betas(mb, save_folder = None):
     phi_beta = mb['model_parameters']["phi_beta_param"]
     kappa_beta = mb['model_parameters']["k_beta_param"]
+    names = mb.get("sample_names")
+    if not names:
+        names = [f"Sample {d+1}" for d in range(mb['NV'].shape[1])]
     if phi_beta.shape[0] == 1:
         fig, ax = plt.subplots(nrows=phi_beta.shape[0], ncols=phi_beta.shape[1], figsize = (7,3))
         ax = np.array([ax])
@@ -146,13 +155,13 @@ def plot_betas(mb, save_folder = None):
             b = (1-phi_beta[k,d])*kappa_beta[k,d]
             pdf = beta.pdf(x, a, b)
             ax[k,d].plot(x, pdf, 'r-', lw=1)
-            ax[k,d].set_title(f"Sample {d+1} Cluster {k} - phi {round(float(phi_beta[k,d]), ndigits=2)}, kappa {round(float(kappa_beta[k,d]), ndigits=2)}", fontsize=10)
+            ax[k,d].set_title(f"{names[d]} - phi {round(float(phi_beta[k,d]), ndigits=2)}, kappa {round(float(kappa_beta[k,d]), ndigits=2)}", fontsize=10)
     seed = mb['seed']
 
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/betas_K_{mb['n_components']}_seed_{seed}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/betas_K_{mb['n_components']}_seed_{seed}.png")
     plt.show()
     plt.close()
 
@@ -189,6 +198,10 @@ def plot_marginals_single_nd(mb, save_folder = None):
         labels = labels
     else:
         labels = np.array(labels)
+
+    names = mb.get("sample_names")
+    if not names:
+        names = [f"Sample {d+1}" for d in range(mb['NV'].shape[1])]
 
     # For each sample I want to plot all the clusters separately.
     # For each cluster, we need to plot the density corresponding to the beta or the pareto based on the value of delta
@@ -247,15 +260,15 @@ def plot_marginals_single_nd(mb, save_folder = None):
             else:
                 # Plot an empty histogram because we know there are no points in that k
                 axes[k, d].hist([], density=True, bins=30, alpha=1)
-            axes[k,d].set_title(f"Sample {d+1} - Cluster {k}")
+            axes[k,d].set_title(f"{names[d]} - Cluster {k}")
             axes[k,d].grid(True, color='gray', linestyle='-', linewidth=0.2)
             # axes[k,d].set_ylim([0,25])
             axes[k,d].set_xlim([-0.01,0.7])
             plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
     plt.show()
     plt.close()
 
@@ -293,6 +306,10 @@ def plot_marginals_single_1d(mb, save_folder= None):
         labels = labels
     else:
         labels = np.array(labels)
+
+    names = mb.get("sample_names")
+    if not names:
+        names = [f"Sample {d+1}" for d in range(mb['NV'].shape[1])]
 
     # For each sample I want to plot all the clusters separately.
     # For each cluster, we need to plot the density corresponding to the beta or the pareto based on the value of delta
@@ -350,15 +367,15 @@ def plot_marginals_single_1d(mb, save_folder= None):
         else:
             # Plot an empty histogram because we know there are no points in that k
             axes[k].hist([], density=True, bins=30, alpha=1)
-        axes[k].set_title(f"Sample {1} - Cluster {k}")
+        axes[k].set_title(f"{names[0]} - Cluster {k}")
         axes[k].grid(True, color='gray', linestyle='-', linewidth=0.2)
         # axes[k,d].set_ylim([0,25])
         axes[k].set_xlim([-0.01,0.7])
         plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
     plt.show()
     plt.close()
 
@@ -437,9 +454,9 @@ def plot_mixing_proportions(mb, save_folder=None):
     plt.tight_layout()
 
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/mixing_proportions_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/mixing_proportions_{mb['n_components']}_seed_{mb['seed']}.png")
     else:
         plt.show()
     plt.close()
@@ -448,7 +465,9 @@ def plot_marginals_inference_nd(mb, D, save_folder = None):
     pairs = np.triu_indices(D, k=1)  # Generate all unique pairs of samples (i, j)
     vaf = (mb['NV'] / mb['DP'])#/purity
     
-    columns=[f"Sample {d+1}" for d in range(D)]
+    columns = mb.get("sample_names")
+    if not columns:
+        columns = [f"Sample {d+1}" for d in range(D)]
     df = pd.DataFrame(vaf, columns=columns)
     mutation_ids = [f"M{i}" for i in range(mb['NV'].shape[0])]
     labels = mb['cluster_id']
@@ -489,9 +508,9 @@ def plot_marginals_inference_nd(mb, D, save_folder = None):
     
     plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/inference_marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/inference_marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
     plt.show()
     plt.close()
 
@@ -499,7 +518,9 @@ def plot_marginals_inference_1d(mb, D, save_folder = None):
     vaf = (mb['NV'] / mb['DP'])
 
 
-    columns=[f"Sample {d+1}" for d in range(D)]
+    columns = mb.get("sample_names")
+    if not columns:
+        columns = [f"Sample {d+1}" for d in range(D)]
     df = pd.DataFrame(vaf, columns=columns)
     mutation_ids = [f"M{i}" for i in range(mb['NV'].shape[0])]
     labels = mb['cluster_id']
@@ -520,7 +541,7 @@ def plot_marginals_inference_1d(mb, D, save_folder = None):
     color_dict = dict(zip(unique_labels, palette))
 
     sns.histplot(
-        data=df,x = 'Sample 1', hue='Label', 
+        data=df,x = columns[0], hue='Label', 
         palette=color_dict,
         bins=100, multiple='layer', alpha=0.7, edgecolor='white'
     )
@@ -533,9 +554,9 @@ def plot_marginals_inference_1d(mb, D, save_folder = None):
     
     plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/inference_marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/inference_marginals_K_{mb['n_components']}_seed_{mb['seed']}.png")
     plt.show()
     plt.close()
 
@@ -554,7 +575,9 @@ def plot_scatter_inference(mb, save_folder=None):
     pairs = np.triu_indices(D, k=1)
     vaf = (mb['NV'] / mb['DP'])
     
-    columns=[f"Sample {d+1}" for d in range(D)]
+    columns = mb.get("sample_names")
+    if not columns:
+        columns = [f"Sample {d+1}" for d in range(D)]
     df = pd.DataFrame(vaf, columns=columns)
     mutation_ids = [f"M{i}" for i in range(mb['NV'].shape[0])]
     labels = mb['cluster_id']
@@ -606,9 +629,9 @@ def plot_scatter_inference(mb, save_folder=None):
 
         plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/inference_K_{mb['n_components']}_seed_{mb['seed']}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/inference_K_{mb['n_components']}_seed_{mb['seed']}.png")
 
     plt.show()
     plt.close()
@@ -682,9 +705,9 @@ def plot_loss_lks_dist(fit_dict, par_threshold=0.005, save_folder = None):
     ax[1,1].legend()
 
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/loss_likelihood_K_{K}_seed_{seed}.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/loss_likelihood_K_{K}_seed_{seed}.png")
     plt.show()
     plt.close()
 
@@ -735,21 +758,21 @@ def plot_bic_icl(mb, save_folder=None):
     
     plt.tight_layout()
     if save_folder is not None:
-        if not os.path.exists(f"plots/{save_folder}"):
-            os.makedirs(f"plots/{save_folder}")
-        plt.savefig(f"plots/{save_folder}/model_selection.png")
+        if not os.path.exists(f"{save_folder}"):
+            os.makedirs(f"{save_folder}")
+        plt.savefig(f"{save_folder}/model_selection.png")
     plt.show()
     plt.close()
 
 def save_results(mb, save_folder):
     import os
-    if not os.path.exists(f"results/{save_folder}"):
-        os.makedirs(f"results/{save_folder}")
+    if not os.path.exists(f"{save_folder}"):
+        os.makedirs(f"{save_folder}")
 
     # save
-    with open(f"results/{save_folder}/fit_results.pkl", "wb") as f:
+    with open(f"{save_folder}/fit_results.pkl", "wb") as f:
         pickle.dump(mb, f)
 
     # To then open it
-    # with open(f"results/{save_folder}/fit_results.pkl", "rb") as f:
+    # with open(f"{save_folder}/fit_results.pkl", "rb") as f:
     #     mb = pickle.load(f)
