@@ -556,10 +556,10 @@ def plot_marginals_inference_1d(mb, D, save_folder = None):
 def plot_marginals_inference(mb, save_folder=None):
     D = mb['NV'].shape[1]
     if D == 1:
-        plot_marginals_inference_1d(mb, D, save_folder=None)
+        plot_marginals_inference_1d(mb, D, save_folder=save_folder)
     else:
-        plot_marginals_inference_nd(mb, D, save_folder=None)
-        
+        plot_marginals_inference_nd(mb, D, save_folder=save_folder)
+
 def plot_scatter_inference(mb, save_folder=None):
     """
     Plot the results.
