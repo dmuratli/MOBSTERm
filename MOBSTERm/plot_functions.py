@@ -22,55 +22,48 @@ colors = [
     "#000075", "#808080", "#d3a6f3", "#ff9cdd", "#73d7b0"  
     ]
 
-def plot_deltas(mb, save_folder = None):
+def plot_deltas(mb, save_folder=None):
     deltas = mb['model_parameters']["delta_param"]
     K = deltas.shape[0]
+
     names = mb.get("sample_names")
     if not names:
         names = [str(i + 1) for i in range(deltas.shape[1])]
-    if deltas.shape[0] == 1:
-        fig, ax = plt.subplots(nrows=deltas.shape[0], ncols=1, figsize=(5, 1.5))
-        ax = [ax] 
-    else:
-        fig, ax = plt.subplots(nrows=deltas.shape[0], ncols=1, figsize=(5, K * 0.6))
 
-    plt.suptitle(f"Delta with K={mb['n_components']}, seed={mb['seed']}", fontsize=12, y=0.98)
+    fig, ax = plt.subplots(
+        nrows=K, ncols=1,
+        figsize=(6, K * 0.9),
+        constrained_layout=True,   # spaces tick labels, ylabels, suptitle, colorbar
+    )
+    if K == 1:
+        ax = [ax]
 
-    fig.subplots_adjust(top=0.93, hspace=0.2, right=0.8)
+    fig.suptitle(f"Delta with K={mb['n_components']}, seed={mb['seed']}", fontsize=12)
 
-    # Define a shared color scale
     norm = plt.Normalize(vmin=0, vmax=1)
     cmap = sns.color_palette("crest", as_cmap=True)
 
-    for k in range(deltas.shape[0]):
+    for k in range(K):
         sns.heatmap(deltas[k], ax=ax[k], vmin=0, vmax=1, cmap=cmap, cbar=False)
 
         num_rows = deltas[k].shape[0]
         ax[k].set_yticks([i + 0.5 for i in range(num_rows)])
         ax[k].set_yticklabels(names, rotation=0)
 
-        ax[k].set(xlabel="", ylabel="Sample")
+        # cluster name as the y-axis label: constrained_layout puts it left of the ticks
+        ax[k].set_ylabel(f"C{k}", rotation=0, ha="right", va="center", labelpad=10)
 
-        if k == (deltas.shape[0] - 1):
+        if k == K - 1:
             ax[k].set_xticklabels(["ParetoBinomial", "BetaBinomial", "Dirac"], rotation=0)
-            ax[k].set(xlabel="Distributions")
+            ax[k].set_xlabel("Distributions")
         else:
             ax[k].set_xticklabels([])
+            ax[k].set_xlabel("")
             ax[k].tick_params(axis='x', which='both', bottom=False, top=False)
 
-        # Add cluster label on the right side, slightly to the left to make space for colorbar
-        ax[k].text(
-            ax[k].get_xlim()[0] - 0.6,  # Position slightly outside the heatmap
-            num_rows / 2,  # Center vertically
-            f"C{k}",
-            fontsize=12,
-            va="center",
-            ha="left"
-        )
-
-    cbar_ax = fig.add_axes([0.85, 0.2, 0.02, 0.6])  # [left, bottom, width, height]
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    fig.colorbar(sm, cax=cbar_ax)
+    fig.colorbar(sm, ax=ax, shrink=0.6)
+
     seed = mb['seed']
     if save_folder is not None:
         if not os.path.exists(f"{save_folder}"):
@@ -112,12 +105,11 @@ def plot_paretos(mb, save_folder = None):
         fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (7,3))
         ax = np.array([ax])
     else:
-        fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (18,mb['used_components']*1))
+        fig, ax = plt.subplots(nrows=alpha_pareto.shape[0], ncols=alpha_pareto.shape[1], figsize = (18,mb['used_components']*2.5))
     names = mb.get("sample_names")
     if not names:
         names = [f"Sample {d+1}" for d in range(mb['NV'].shape[1])]  
     plt.suptitle(f"Pareto with K={mb['n_components']}, seed={mb['seed']}", fontsize=14)
-    fig.tight_layout()
     x = np.arange(0,0.5,0.001)
     for k in range(alpha_pareto.shape[0]):
         for d in range(alpha_pareto.shape[1]):
@@ -127,6 +119,7 @@ def plot_paretos(mb, save_folder = None):
                 ax[k,d].set_title(f"{names[d]} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}, p {round(float(probs_pareto[k,d]), ndigits=2)}", fontsize=10)
             else:
                 ax[k,d].set_title(f"{names[d]} Cluster {k} - alpha {round(float(alpha_pareto[k,d]), ndigits=2)}", fontsize=10)
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
     seed = mb['seed']
     if save_folder is not None:
         if not os.path.exists(f"{save_folder}"):
@@ -145,9 +138,8 @@ def plot_betas(mb, save_folder = None):
         fig, ax = plt.subplots(nrows=phi_beta.shape[0], ncols=phi_beta.shape[1], figsize = (7,3))
         ax = np.array([ax])
     else:
-        fig, ax = plt.subplots(nrows=phi_beta.shape[0], ncols=phi_beta.shape[1], figsize = (18,mb['used_components']*1))   
+        fig, ax = plt.subplots(nrows=phi_beta.shape[0], ncols=phi_beta.shape[1], figsize = (18,mb['used_components']*2.5))   
     plt.suptitle(f"Beta with K={mb['n_components']}, seed={mb['seed']}", fontsize=14)
-    fig.tight_layout()
     x = np.arange(0,1,0.001)
     for k in range(phi_beta.shape[0]):
         for d in range(phi_beta.shape[1]):
@@ -156,6 +148,7 @@ def plot_betas(mb, save_folder = None):
             pdf = beta.pdf(x, a, b)
             ax[k,d].plot(x, pdf, 'r-', lw=1)
             ax[k,d].set_title(f"{names[d]} - phi {round(float(phi_beta[k,d]), ndigits=2)}, kappa {round(float(kappa_beta[k,d]), ndigits=2)}", fontsize=10)
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
     seed = mb['seed']
 
     if save_folder is not None:
@@ -264,7 +257,7 @@ def plot_marginals_single_nd(mb, save_folder = None):
             axes[k,d].grid(True, color='gray', linestyle='-', linewidth=0.2)
             # axes[k,d].set_ylim([0,25])
             axes[k,d].set_xlim([-0.01,0.7])
-            plt.tight_layout()
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
     if save_folder is not None:
         if not os.path.exists(f"{save_folder}"):
             os.makedirs(f"{save_folder}")
@@ -371,7 +364,7 @@ def plot_marginals_single_1d(mb, save_folder= None):
         axes[k].grid(True, color='gray', linestyle='-', linewidth=0.2)
         # axes[k,d].set_ylim([0,25])
         axes[k].set_xlim([-0.01,0.7])
-        plt.tight_layout()
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
     if save_folder is not None:
         if not os.path.exists(f"{save_folder}"):
             os.makedirs(f"{save_folder}")
